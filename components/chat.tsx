@@ -2,7 +2,7 @@
 
 import { DefaultChatTransport } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
@@ -22,6 +22,21 @@ import { useAutoResume } from '@/hooks/use-auto-resume';
 import { ChatSDKError } from '@/lib/errors';
 import type { Attachment, ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
+import { useGenerativeUI } from '@front10/generative-ui';
+import {
+  ProductCard,
+  ProductCardLoading,
+  ProductCardError,
+  ImageGallery,
+  ImageGalleryLoading,
+  ImageGalleryError,
+  SentimentAnalyzer,
+  SentimentAnalyzerLoading,
+  SentimentAnalyzerError,
+  CalendarComponent,
+  CalendarLoading,
+  CalendarError,
+} from '@front10/generative-ui/examples';
 
 export function Chat({
   id,
@@ -49,6 +64,44 @@ export function Chat({
   const { setDataStream } = useDataStream();
 
   const [input, setInput] = useState<string>('');
+
+  // Registrar componentes usando useEffect
+  const { registerComponent } = useGenerativeUI();
+
+  // Registrar componentes inmediatamente usando useLayoutEffect para que se ejecute antes del renderizado
+  React.useLayoutEffect(() => {
+    // Registrar el componente de Product Card
+    registerComponent({
+      toolId: 'getProductInfo',
+      LoadingComponent: ProductCardLoading,
+      SuccessComponent: ProductCard,
+      ErrorComponent: ProductCardError,
+    });
+
+    // Registrar el componente de Image Gallery
+    registerComponent({
+      toolId: 'searchImages',
+      LoadingComponent: ImageGalleryLoading,
+      SuccessComponent: ImageGallery,
+      ErrorComponent: ImageGalleryError,
+    });
+
+    // Registrar el componente de Sentiment Analyzer
+    registerComponent({
+      toolId: 'analyzeSentimentTool',
+      LoadingComponent: SentimentAnalyzerLoading,
+      SuccessComponent: SentimentAnalyzer,
+      ErrorComponent: SentimentAnalyzerError,
+    });
+
+    // Registrar el componente de Calendar Events
+    registerComponent({
+      toolId: 'getEvents',
+      LoadingComponent: CalendarLoading,
+      SuccessComponent: CalendarComponent,
+      ErrorComponent: CalendarError,
+    });
+  }, [registerComponent]);
 
   const {
     messages,
@@ -79,6 +132,7 @@ export function Chat({
       },
     }),
     onData: (dataPart) => {
+      //@ts-ignore
       setDataStream((ds) => (ds ? [...ds, dataPart] : []));
     },
     onFinish: () => {

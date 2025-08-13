@@ -60,3 +60,49 @@ pnpm dev
 ```
 
 Your app template should now be running on [localhost:3000](http://localhost:3000).
+
+## 🗓️ Calendar Events Example
+
+The calendar events example demonstrates a complex use case with multiple tools and a sophisticated UI component.
+
+### Available Tools
+
+- **`getEvents`**: Fetch calendar events for a specific date range
+- **`createEvent`**: Create a new calendar event
+- **`updateEvent`**: Update an existing calendar event
+- **`deleteEvent`**: Delete a calendar event
+
+### Example Usage
+
+Try these prompts in the chat:
+
+```
+Show me my calendar events for this month
+```
+
+```
+Create a new event called "Team Meeting" for tomorrow at 2 PM
+```
+
+```
+Update the event "Team Meeting" to start at 3 PM instead
+```
+
+```
+Delete the event "Team Meeting"
+```
+
+### Features
+
+- **Interactive Calendar UI**: Full calendar view with event display
+- **Event Management**: Create, update, and delete events
+- **Filtering**: Filter events by status, priority, and color
+- **Recurring Events**: Support for daily, weekly, monthly, and yearly recurring events
+- **Global State**: Events persist across tool calls using Zustand store
+- **Responsive Design**: Works on desktop and mobile devices
+
+### Component States
+
+- **Loading**: Shows skeleton calendar while fetching events
+- **Success**: Displays interactive calendar with events
+- **Error**: Shows error message with retry options

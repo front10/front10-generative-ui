@@ -19,6 +19,8 @@
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test"
   },
   "dependencies": {
+    "@front10/generative-ui": "file:package/front10-generative-ui",
+    "@ai-sdk/openai": "^2.0.10",
     "@ai-sdk/provider": "2.0.0-beta.1",
     "@ai-sdk/react": "2.0.0-beta.6",
     "@ai-sdk/xai": "2.0.0-beta.2",
