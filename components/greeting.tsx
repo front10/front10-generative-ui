@@ -13,16 +13,18 @@ export const Greeting = () => {
         transition={{ delay: 0.5 }}
         className="text-2xl font-semibold"
       >
-        Hello there!
+        Welcome to Generative UI Demo!
       </motion.div>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 10 }}
         transition={{ delay: 0.6 }}
-        className="text-2xl text-zinc-500"
+        className="text-lg text-zinc-500 mt-2"
       >
-        How can I help you today?
+        This demo showcases the @front10/generative-ui package in action. Try
+        the suggested prompts below to see interactive UI components that
+        automatically render when AI tools are executed.
       </motion.div>
     </div>
   );

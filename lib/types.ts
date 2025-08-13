@@ -1,9 +1,18 @@
 import { z } from 'zod';
+import type { InferUITool, UIMessage } from 'ai';
 import type { getWeather } from './ai/tools/get-weather';
 import type { createDocument } from './ai/tools/create-document';
 import type { updateDocument } from './ai/tools/update-document';
 import type { requestSuggestions } from './ai/tools/request-suggestions';
-import type { InferUITool, UIMessage } from 'ai';
+import type {
+  getProductInfo,
+  searchImages,
+  analyzeSentimentTool,
+  getEvents,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+} from '@front10/generative-ui/examples';
 
 import type { ArtifactKind } from '@/components/artifact';
 import type { Suggestion } from './db/schema';
@@ -22,12 +31,26 @@ type updateDocumentTool = InferUITool<ReturnType<typeof updateDocument>>;
 type requestSuggestionsTool = InferUITool<
   ReturnType<typeof requestSuggestions>
 >;
+type getProductInfoTool = InferUITool<typeof getProductInfo>;
+type searchImagesTool = InferUITool<typeof searchImages>;
+type analyzeSentimentToolType = InferUITool<typeof analyzeSentimentTool>;
+type getEventsTool = InferUITool<typeof getEvents>;
+type createEventTool = InferUITool<typeof createEvent>;
+type updateEventTool = InferUITool<typeof updateEvent>;
+type deleteEventTool = InferUITool<typeof deleteEvent>;
 
 export type ChatTools = {
   getWeather: weatherTool;
   createDocument: createDocumentTool;
   updateDocument: updateDocumentTool;
   requestSuggestions: requestSuggestionsTool;
+  getProductInfo: getProductInfoTool;
+  searchImages: searchImagesTool;
+  analyzeSentimentTool: analyzeSentimentToolType;
+  getEvents: getEventsTool;
+  createEvent: createEventTool;
+  updateEvent: updateEventTool;
+  deleteEvent: deleteEventTool;
 };
 
 export type CustomUIDataTypes = {
@@ -49,7 +72,6 @@ export type ChatMessage = UIMessage<
   CustomUIDataTypes,
   ChatTools
 >;
-
 export interface Attachment {
   name: string;
   url: string;

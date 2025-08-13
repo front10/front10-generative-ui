@@ -2,14 +2,16 @@ import { Toaster } from 'sonner';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
+import { GenerativeUIProviderWrapper } from '@/components/generative-ui-provider';
 
 import './globals.css';
 import { SessionProvider } from 'next-auth/react';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://chat.vercel.ai'),
-  title: 'Next.js Chatbot Template',
-  description: 'Next.js chatbot template using the AI SDK.',
+  title: 'Front10 Generative UI Demo',
+  description:
+    'Interactive demo showcasing the @front10/generative-ui package with AI-powered UI components that automatically render when tools are executed.',
 };
 
 export const viewport = {
@@ -77,8 +79,10 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Toaster position="top-center" />
-          <SessionProvider>{children}</SessionProvider>
+          <GenerativeUIProviderWrapper>
+            <Toaster position="top-center" />
+            <SessionProvider>{children}</SessionProvider>
+          </GenerativeUIProviderWrapper>
         </ThemeProvider>
       </body>
     </html>

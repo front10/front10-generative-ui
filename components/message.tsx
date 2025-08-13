@@ -19,6 +19,7 @@ import { MessageReasoning } from './message-reasoning';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
+import { useRenderGenerativeUI } from '@front10/generative-ui';
 
 // Type narrowing is handled by TypeScript's control flow analysis
 // The AI SDK provides proper discriminated unions for tool calls
@@ -49,6 +50,7 @@ const PurePreviewMessage = ({
   );
 
   useDataStream();
+  const renderGenerativeUI = useRenderGenerativeUI();
 
   return (
     <AnimatePresence>
@@ -91,6 +93,7 @@ const PurePreviewMessage = ({
                     key={attachment.url}
                     attachment={{
                       name: attachment.filename ?? 'file',
+                      //@ts-ignore
                       contentType: attachment.mediaType,
                       url: attachment.url,
                     }}
@@ -113,7 +116,21 @@ const PurePreviewMessage = ({
                 );
               }
 
+              // Check if there are generative UI components with output in this message
+              const hasGenerativeUIWithOutput = message.parts?.some(
+                (p) =>
+                  p.type === 'tool-getProductInfo' ||
+                  p.type === 'tool-searchImages' ||
+                  p.type === 'tool-analyzeSentimentTool' ||
+                  p.type === 'tool-getEvents' ||
+                  ('output' in p && p.output),
+              );
+
               if (type === 'text') {
+                // Skip text content if there are generative UI components with output to avoid redundancy
+                if (hasGenerativeUIWithOutput && message.role === 'assistant') {
+                  return null;
+                }
                 if (mode === 'view') {
                   return (
                     <div key={key} className="flex flex-row gap-2 items-start">
@@ -180,9 +197,93 @@ const PurePreviewMessage = ({
                   const { output } = part;
                   return (
                     <div key={toolCallId}>
-                      <Weather weatherAtLocation={output} />
+                      <Weather weatherAtLocation={output as any} />
                     </div>
                   );
+                }
+              }
+
+              // Renderizado de tools usando la abstracción de Generative UI
+              if (type === 'tool-getProductInfo') {
+                const { toolCallId, state } = part;
+                const input = 'input' in part ? part.input : undefined;
+                const output = 'output' in part ? part.output : undefined;
+                const error = 'errorText' in part ? part.errorText : undefined;
+
+                const renderedComponent = renderGenerativeUI({
+                  toolId: 'getProductInfo',
+                  state,
+                  input,
+                  output,
+                  error,
+                  toolCallId,
+                });
+
+                if (renderedComponent) {
+                  return <div key={toolCallId}>{renderedComponent}</div>;
+                }
+              }
+
+              // Renderizado para searchImages
+              if (type === 'tool-searchImages') {
+                const { toolCallId, state } = part;
+                const input = 'input' in part ? part.input : undefined;
+                const output = 'output' in part ? part.output : undefined;
+                const error = 'errorText' in part ? part.errorText : undefined;
+
+                const renderedComponent = renderGenerativeUI({
+                  toolId: 'searchImages',
+                  state,
+                  input,
+                  output,
+                  error,
+                  toolCallId,
+                });
+
+                if (renderedComponent) {
+                  return <div key={toolCallId}>{renderedComponent}</div>;
+                }
+              }
+
+              // Renderizado para analyzeSentimentTool
+              if (type === 'tool-analyzeSentimentTool') {
+                const { toolCallId, state } = part;
+                const input = 'input' in part ? part.input : undefined;
+                const output = 'output' in part ? part.output : undefined;
+                const error = 'errorText' in part ? part.errorText : undefined;
+
+                const renderedComponent = renderGenerativeUI({
+                  toolId: 'analyzeSentimentTool',
+                  state,
+                  input,
+                  output,
+                  error,
+                  toolCallId,
+                });
+
+                if (renderedComponent) {
+                  return <div key={toolCallId}>{renderedComponent}</div>;
+                }
+              }
+
+              // Renderizado para getEvents (Calendar)
+              if (type === 'tool-getEvents') {
+                const { toolCallId, state } = part;
+                const input = 'input' in part ? part.input : undefined;
+                const output = 'output' in part ? part.output : undefined;
+                const error = 'errorText' in part ? part.errorText : undefined;
+
+                const renderedComponent = renderGenerativeUI({
+                  toolId: 'getEvents',
+                  state,
+                  input,
+                  output,
+                  error,
+                  toolCallId,
+                });
+
+                if (renderedComponent) {
+                  return <div key={toolCallId}>{renderedComponent}</div>;
                 }
               }
 
@@ -201,13 +302,13 @@ const PurePreviewMessage = ({
                 if (state === 'output-available') {
                   const { output } = part;
 
-                  if ('error' in output) {
+                  if ('error' in (output as any)) {
                     return (
                       <div
                         key={toolCallId}
                         className="text-red-500 p-2 border rounded"
                       >
-                        Error: {String(output.error)}
+                        Error: {String((output as any).error)}
                       </div>
                     );
                   }
@@ -216,7 +317,7 @@ const PurePreviewMessage = ({
                     <div key={toolCallId}>
                       <DocumentPreview
                         isReadonly={isReadonly}
-                        result={output}
+                        result={output as any}
                       />
                     </div>
                   );
@@ -233,7 +334,7 @@ const PurePreviewMessage = ({
                     <div key={toolCallId}>
                       <DocumentToolCall
                         type="update"
-                        args={input}
+                        args={input as any}
                         isReadonly={isReadonly}
                       />
                     </div>
@@ -243,13 +344,13 @@ const PurePreviewMessage = ({
                 if (state === 'output-available') {
                   const { output } = part;
 
-                  if ('error' in output) {
+                  if ('error' in (output as any)) {
                     return (
                       <div
                         key={toolCallId}
                         className="text-red-500 p-2 border rounded"
                       >
-                        Error: {String(output.error)}
+                        Error: {String((output as any).error)}
                       </div>
                     );
                   }
@@ -258,7 +359,7 @@ const PurePreviewMessage = ({
                     <div key={toolCallId}>
                       <DocumentToolResult
                         type="update"
-                        result={output}
+                        result={output as any}
                         isReadonly={isReadonly}
                       />
                     </div>
@@ -275,7 +376,7 @@ const PurePreviewMessage = ({
                     <div key={toolCallId}>
                       <DocumentToolCall
                         type="request-suggestions"
-                        args={input}
+                        args={input as any}
                         isReadonly={isReadonly}
                       />
                     </div>
@@ -285,13 +386,13 @@ const PurePreviewMessage = ({
                 if (state === 'output-available') {
                   const { output } = part;
 
-                  if ('error' in output) {
+                  if ('error' in (output as any)) {
                     return (
                       <div
                         key={toolCallId}
                         className="text-red-500 p-2 border rounded"
                       >
-                        Error: {String(output.error)}
+                        Error: {String((output as any).error)}
                       </div>
                     );
                   }
@@ -300,7 +401,7 @@ const PurePreviewMessage = ({
                     <div key={toolCallId}>
                       <DocumentToolResult
                         type="request-suggestions"
-                        result={output}
+                        result={output as any}
                         isReadonly={isReadonly}
                       />
                     </div>
