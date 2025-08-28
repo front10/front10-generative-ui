@@ -3,19 +3,43 @@ import react__default, { ReactNode } from 'react';
 import { ClassValue } from 'clsx';
 
 type ToolState = 'input-streaming' | 'input-available' | 'output-available' | 'output-error';
+<<<<<<< HEAD
+interface UserAction {
+    toolId: string;
+    toolCallId?: string;
+    action: string;
+    data?: any;
+    context?: any;
+}
+=======
+>>>>>>> 5acece371ee0d046bd607e9a309ec796c9a5d88b
 interface GenerativeUIComponent<TInput = any, TOutput = any> {
     toolId: string;
     LoadingComponent?: React.ComponentType<{
         input?: TInput;
+<<<<<<< HEAD
+        onAction?: (action: Omit<UserAction, 'toolId'>) => void;
+=======
+>>>>>>> 5acece371ee0d046bd607e9a309ec796c9a5d88b
     }>;
     SuccessComponent: React.ComponentType<{
         output: TOutput;
         input?: TInput;
+<<<<<<< HEAD
+        onAction?: (action: Omit<UserAction, 'toolId'>) => void;
+=======
+>>>>>>> 5acece371ee0d046bd607e9a309ec796c9a5d88b
     }>;
     ErrorComponent?: React.ComponentType<{
         error: string;
         input?: TInput;
+<<<<<<< HEAD
+        onAction?: (action: Omit<UserAction, 'toolId'>) => void;
     }>;
+    onUserAction?: (action: UserAction) => void;
+=======
+    }>;
+>>>>>>> 5acece371ee0d046bd607e9a309ec796c9a5d88b
 }
 interface GenerativeUIRegistryType {
     [toolId: string]: GenerativeUIComponent;
@@ -48,4 +72,8 @@ declare const useRenderGenerativeUI: () => (props: GenerativeUIRendererProps) =>
 
 declare function cn(...inputs: ClassValue[]): string;
 
+<<<<<<< HEAD
+export { type GenerativeUIComponent, GenerativeUIProvider, GenerativeUIRegistry, type GenerativeUIRegistryType, GenerativeUIRenderer, type GenerativeUIRendererProps, type ToolState, type UseGenerativeUI, type UserAction, cn, useGenerativeUI, useRegisterGenerativeComponent, useRenderGenerativeUI };
+=======
 export { type GenerativeUIComponent, GenerativeUIProvider, GenerativeUIRegistry, type GenerativeUIRegistryType, GenerativeUIRenderer, type GenerativeUIRendererProps, type ToolState, type UseGenerativeUI, cn, useGenerativeUI, useRegisterGenerativeComponent, useRenderGenerativeUI };
+>>>>>>> 5acece371ee0d046bd607e9a309ec796c9a5d88b

@@ -1,550 +1,400 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
-  Calendar,
-  Clock,
-  MapPin,
-  Users,
-  Plus,
-  Edit,
-  Trash2,
-  Filter,
+  CalendarIcon,
+  PlusIcon,
+  EditIcon,
+  TrashIcon,
+  CheckIcon,
+  XIcon,
+  EyeIcon,
 } from 'lucide-react';
 import { cn } from '../../../src/utils';
-import type { CalendarEvent, CalendarView, EventFilter } from '../types';
-import { useCalendarStore } from '../store';
 
-// Color mapping for events
-const colorClasses = {
-  blue: 'bg-blue-100 text-blue-800 border-blue-200',
-  green: 'bg-green-100 text-green-800 border-green-200',
-  red: 'bg-red-100 text-red-800 border-red-200',
-  yellow: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  purple: 'bg-purple-100 text-purple-800 border-purple-200',
-  orange: 'bg-orange-100 text-orange-800 border-orange-200',
-};
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  location?: string;
+  attendees?: string[];
+  status: 'pending' | 'confirmed' | 'cancelled';
+}
 
-const priorityClasses = {
-  low: 'text-gray-500',
-  medium: 'text-yellow-600',
-  high: 'text-red-600',
-};
-
-// Loading state component
-export const CalendarLoading: React.FC<{
-  input?: { startDate?: string; endDate?: string };
-}> = ({ input: _input }) => (
-  <div className="animate-pulse bg-white rounded-lg shadow-md p-6">
-    <div className="flex items-center space-x-3 mb-6">
-      <div className="bg-blue-100 rounded-lg size-12 flex items-center justify-center">
-        <Calendar className="size-6 text-blue-600" />
-      </div>
-      <div className="flex-1">
-        <div className="h-6 bg-gray-200 rounded w-1/3 mb-2" />
-        <div className="h-4 bg-gray-200 rounded w-1/2" />
-      </div>
-    </div>
-
-    {/* Calendar grid skeleton */}
-    <div className="grid grid-cols-7 gap-1 mb-4">
-      {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day) => (
-        <div
-          key={day}
-          className="h-8 bg-gray-200 rounded text-center flex items-center justify-center"
-        >
-          <div className="h-4 bg-gray-300 rounded w-8" />
-        </div>
-      ))}
-    </div>
-
-    <div className="grid grid-cols-7 gap-1">
-      {Array.from({ length: 35 }).map((_, i) => (
-        <div
-          key={i}
-          className="h-20 bg-gray-100 rounded border-2 border-dashed border-gray-200"
-        />
-      ))}
-    </div>
-
-    <div className="mt-4 flex items-center space-x-2">
-      <Clock className="size-4 text-gray-400" />
-      <span className="text-sm text-gray-500">
-        Loading calendar for{' '}
-        {_input?.startDate
-          ? new Date(_input.startDate).toLocaleDateString()
-          : 'current month'}
-        ...
-      </span>
-    </div>
-  </div>
-);
-
-// Success state component
-export const CalendarComponent: React.FC<{
+export interface CalendarProps {
   output: {
     events: CalendarEvent[];
-    total: number;
-    view: CalendarView;
+    totalEvents: number;
+    nextEvent?: CalendarEvent;
   };
-  input?: { startDate?: string; endDate?: string };
-}> = ({ output, input: _input }) => {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [viewType, setViewType] = useState<'month' | 'week' | 'day'>('month');
-  const [filters, setFilters] = useState<EventFilter>({});
-  const [showFilters, setShowFilters] = useState(false);
+  input?: {
+    date?: string;
+    userId?: string;
+  };
+  onAction?: (action: { action: string; data?: any; context?: any }) => void;
+}
+
+export const CalendarLoading: React.FC<{
+  input?: { date?: string; userId?: string };
+  onAction?: (action: { action: string; data?: any; context?: any }) => void;
+}> = ({ input: _input, onAction: _onAction }) => {
+  return (
+    <div className="animate-pulse bg-white rounded-lg shadow-md p-6 max-w-2xl">
+      <div className="flex items-center space-x-3 mb-6">
+        <div className="bg-gray-200 rounded-lg size-10" />
+        <div className="flex-1">
+          <div className="h-5 bg-gray-200 rounded w-1/3 mb-2" />
+          <div className="h-3 bg-gray-200 rounded w-1/2" />
+        </div>
+      </div>
+      <div className="space-y-4">
+        {Array.from({ length: 3 }, () => (
+          <div
+            key={`skeleton-${Math.random()}`}
+            className="border border-gray-200 rounded-lg p-4"
+          >
+            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+            <div className="h-3 bg-gray-200 rounded w-1/2" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export const CalendarComponent: React.FC<CalendarProps> = ({
+  output,
+  input: _input,
+  onAction,
+}) => {
+  const { events, totalEvents, nextEvent } = output;
+  console.log('event length', events.length);
+  console.log('totalEvents', totalEvents);
+
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
     null,
   );
 
-  const { addEvent, updateEvent, deleteEvent, addAction } = useCalendarStore();
-
-  // Generate calendar days
-  const calendarDays = useMemo(() => {
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
-
-    const days = [];
-    const currentDate = new Date(startDate);
-
-    while (currentDate <= lastDay || days.length < 42) {
-      days.push(new Date(currentDate));
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    return days;
-  }, [selectedDate]);
-
-  // Get events for a specific date
-  const getEventsForDate = (date: Date) => {
-    return output.events.filter((event) => {
-      const eventStart = new Date(event.startDate);
-      const eventEnd = new Date(event.endDate);
-      const targetDate = new Date(date);
-      targetDate.setHours(0, 0, 0, 0);
-
-      return eventStart <= targetDate && eventEnd >= targetDate;
-    });
-  };
-
-  // Handle event selection
-  const handleEventClick = (event: CalendarEvent) => {
-    setSelectedEvent(event);
-    addAction({
-      type: 'view',
-      payload: { eventId: event.id },
-      timestamp: new Date().toISOString(),
-    });
-  };
-
-  // Handle date selection
-  const handleDateClick = (date: Date) => {
-    setSelectedDate(date);
-    addAction({
-      type: 'view',
-      payload: { date: date.toISOString() },
-      timestamp: new Date().toISOString(),
-    });
-  };
-
-  // Handle event creation
   const handleCreateEvent = () => {
-    const newEvent: CalendarEvent = {
-      id: `event_${Date.now()}`,
-      title: 'Nuevo evento',
-      description: 'Descripción del evento',
-      startDate: selectedDate.toISOString(),
-      endDate: new Date(selectedDate.getTime() + 60 * 60 * 1000).toISOString(),
-      allDay: false,
-      color: 'blue',
-      priority: 'medium',
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    addEvent(newEvent);
-    addAction({
-      type: 'create',
-      payload: { event: newEvent },
-      timestamp: new Date().toISOString(),
+    onAction?.({
+      action: 'create_event',
+      data: {
+        userId: _input?.userId,
+        date: _input?.date || new Date().toISOString().split('T')[0],
+      },
     });
   };
 
-  // Handle event update
-  const handleUpdateEvent = (
-    eventId: string,
-    updates: Partial<CalendarEvent>,
-  ) => {
-    updateEvent(eventId, updates);
-    addAction({
-      type: 'update',
-      payload: { eventId, updates },
-      timestamp: new Date().toISOString(),
+  const handleEditEvent = (event: CalendarEvent) => {
+    onAction?.({
+      action: 'edit_event',
+      data: {
+        eventId: event.id,
+        eventTitle: event.title,
+        currentData: event,
+      },
     });
   };
 
-  // Handle event deletion
-  const handleDeleteEvent = (eventId: string) => {
-    deleteEvent(eventId);
-    addAction({
-      type: 'delete',
-      payload: { eventId },
-      timestamp: new Date().toISOString(),
+  const handleDeleteEvent = (event: CalendarEvent) => {
+    onAction?.({
+      action: 'delete_event',
+      data: {
+        eventId: event.id,
+        eventTitle: event.title,
+      },
     });
-    setSelectedEvent(null);
+  };
+
+  const handleConfirmEvent = (event: CalendarEvent) => {
+    onAction?.({
+      action: 'confirm_event',
+      data: {
+        eventId: event.id,
+        eventTitle: event.title,
+      },
+    });
+  };
+
+  const handleCancelEvent = (event: CalendarEvent) => {
+    onAction?.({
+      action: 'cancel_event',
+      data: {
+        eventId: event.id,
+        eventTitle: event.title,
+      },
+    });
+  };
+
+  const handleViewEventDetails = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    onAction?.({
+      action: 'view_event_details',
+      data: {
+        eventId: event.id,
+        eventTitle: event.title,
+      },
+    });
+  };
+
+  const handleShareEvent = (event: CalendarEvent) => {
+    onAction?.({
+      action: 'share_event',
+      data: {
+        eventId: event.id,
+        eventTitle: event.title,
+        eventUrl: `${window.location.origin}/event/${event.id}`,
+      },
+    });
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-white rounded-lg shadow-md p-6 max-w-2xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="bg-blue-100 rounded-lg size-12 flex items-center justify-center">
-            <Calendar className="size-6 text-blue-600" />
+          <div className="bg-blue-100 rounded-lg p-2">
+            <CalendarIcon className="w-6 h-6 text-blue-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-lg">Calendario de Eventos</h3>
-            <p className="text-gray-600 text-sm">
-              {output.total} eventos •{' '}
-              {selectedDate.toLocaleDateString('es-ES', {
-                month: 'long',
-                year: 'numeric',
-              })}
-            </p>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Calendar Events
+            </h3>
+            <p className="text-sm text-gray-500">{totalEvents} events found</p>
           </div>
         </div>
-
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center space-x-1 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-          >
-            <Filter className="size-4" />
-            <span>Filtros</span>
-          </button>
-          <button
-            onClick={handleCreateEvent}
-            className="flex items-center space-x-1 px-3 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-md transition-colors"
-          >
-            <Plus className="size-4" />
-            <span>Nuevo Evento</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleCreateEvent}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <PlusIcon className="w-4 h-4" />
+          New Event
+        </button>
       </div>
 
-      {/* Filters */}
-      {showFilters && (
-        <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Next Event Highlight */}
+      {nextEvent && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h4 className="font-medium text-blue-900 mb-2">Next Event</h4>
+          <div className="flex items-center justify-between">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Buscar
-              </label>
-              <input
-                type="text"
-                placeholder="Buscar eventos..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                value={filters.search || ''}
-                onChange={(e) =>
-                  setFilters({ ...filters, search: e.target.value })
-                }
-              />
+              <p className="font-medium text-blue-800">{nextEvent.title}</p>
+              <p className="text-sm text-blue-600">
+                {new Date(nextEvent.startDate).toLocaleDateString()} at{' '}
+                {nextEvent.startDate.split('T')[1]}
+              </p>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Estado
-              </label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                value={filters.status || ''}
-                onChange={(e) =>
-                  setFilters({ ...filters, status: e.target.value as any })
-                }
-              >
-                <option value="">Todos</option>
-                <option value="pending">Pendiente</option>
-                <option value="confirmed">Confirmado</option>
-                <option value="cancelled">Cancelado</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Prioridad
-              </label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                value={filters.priority || ''}
-                onChange={(e) =>
-                  setFilters({ ...filters, priority: e.target.value as any })
-                }
-              >
-                <option value="">Todas</option>
-                <option value="low">Baja</option>
-                <option value="medium">Media</option>
-                <option value="high">Alta</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Color
-              </label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                value={filters.color || ''}
-                onChange={(e) =>
-                  setFilters({ ...filters, color: e.target.value as any })
-                }
-              >
-                <option value="">Todos</option>
-                <option value="blue">Azul</option>
-                <option value="green">Verde</option>
-                <option value="red">Rojo</option>
-                <option value="yellow">Amarillo</option>
-                <option value="purple">Púrpura</option>
-                <option value="orange">Naranja</option>
-              </select>
-            </div>
+            <button
+              type="button"
+              onClick={() => handleViewEventDetails(nextEvent)}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              View Details
+            </button>
           </div>
         </div>
       )}
 
-      {/* Calendar Navigation */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() =>
-              setSelectedDate(
-                new Date(
-                  selectedDate.getFullYear(),
-                  selectedDate.getMonth() - 1,
-                ),
-              )
-            }
-            className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-          >
-            ←
-          </button>
-          <h4 className="font-medium">
-            {selectedDate.toLocaleDateString('es-ES', {
-              month: 'long',
-              year: 'numeric',
-            })}
-          </h4>
-          <button
-            onClick={() =>
-              setSelectedDate(
-                new Date(
-                  selectedDate.getFullYear(),
-                  selectedDate.getMonth() + 1,
-                ),
-              )
-            }
-            className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-          >
-            →
-          </button>
-        </div>
-
-        <div className="flex items-center space-x-1">
-          {(['month', 'week', 'day'] as const).map((type) => (
-            <button
-              key={type}
-              onClick={() => setViewType(type)}
-              className={cn(
-                'px-3 py-1 text-sm rounded transition-colors',
-                viewType === type
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 hover:bg-gray-200',
-              )}
-            >
-              {type === 'month' ? 'Mes' : type === 'week' ? 'Semana' : 'Día'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1 mb-4">
-        {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day) => (
+      {/* Events List */}
+      <div className="space-y-4">
+        {events.map((event) => (
           <div
-            key={day}
-            className="h-8 bg-gray-50 rounded text-center flex items-center justify-center text-sm font-medium text-gray-600"
+            key={event.id}
+            className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
           >
-            {day}
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h4 className="font-medium text-gray-900">{event.title}</h4>
+                  <span
+                    className={cn(
+                      'px-2 py-1 rounded-full text-xs font-medium',
+                      {
+                        'bg-yellow-100 text-yellow-800':
+                          event.status === 'pending',
+                        'bg-green-100 text-green-800':
+                          event.status === 'confirmed',
+                        'bg-red-100 text-red-800': event.status === 'cancelled',
+                      },
+                    )}
+                  >
+                    {event.status}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mb-2">
+                  {event.description}
+                </p>
+                <div className="text-xs text-gray-500">
+                  <p>
+                    {new Date(event.startDate).toLocaleDateString()} -{' '}
+                    {new Date(event.endDate).toLocaleDateString()}
+                  </p>
+                  {event.location && <p>📍 {event.location}</p>}
+                </div>
+              </div>
+
+              {/* Event Actions */}
+              <div className="flex items-center gap-1 ml-4">
+                <button
+                  type="button"
+                  onClick={() => handleViewEventDetails(event)}
+                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  title="View Details"
+                >
+                  <EyeIcon className="w-4 h-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleEditEvent(event)}
+                  className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                  title="Edit Event"
+                >
+                  <EditIcon className="w-4 h-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleShareEvent(event)}
+                  className="p-1 text-gray-400 hover:text-green-600 transition-colors"
+                  title="Share Event"
+                >
+                  <span className="text-sm">📤</span>
+                </button>
+
+                {event.status === 'pending' && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleConfirmEvent(event)}
+                      className="p-1 text-gray-400 hover:text-green-600 transition-colors"
+                      title="Confirm Event"
+                    >
+                      <CheckIcon className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleCancelEvent(event)}
+                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                      title="Cancel Event"
+                    >
+                      <XIcon className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => handleDeleteEvent(event)}
+                  className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                  title="Delete Event"
+                >
+                  <TrashIcon className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
-        {calendarDays.map((date, index) => {
-          const isCurrentMonth = date.getMonth() === selectedDate.getMonth();
-          const isToday = date.toDateString() === new Date().toDateString();
-          const dayEvents = getEventsForDate(date);
-
-          return (
-            <div
-              key={index}
-              onClick={() => handleDateClick(date)}
-              className={cn(
-                'h-20 p-1 border border-gray-200 rounded cursor-pointer transition-colors hover:bg-gray-50',
-                !isCurrentMonth && 'bg-gray-50 text-gray-400',
-                isToday && 'bg-blue-50 border-blue-300',
-              )}
-            >
-              <div className="text-xs font-medium mb-1">{date.getDate()}</div>
-              <div className="space-y-1">
-                {dayEvents.slice(0, 2).map((event) => (
-                  <div
-                    key={event.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEventClick(event);
-                    }}
-                    className={cn(
-                      'px-1 py-0.5 text-xs rounded truncate cursor-pointer border',
-                      colorClasses[event.color || 'blue'],
-                    )}
-                    title={event.title}
-                  >
-                    {event.title}
-                  </div>
-                ))}
-                {dayEvents.length > 2 && (
-                  <div className="text-xs text-gray-500 px-1">
-                    +{dayEvents.length - 2} más
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Selected Event Details */}
+      {/* Event Details Modal */}
       {selectedEvent && (
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h4 className="font-semibold text-lg mb-2">
-                {selectedEvent.title}
-              </h4>
-              {selectedEvent.description && (
-                <p className="text-gray-600 mb-3">
-                  {selectedEvent.description}
-                </p>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">
+              {selectedEvent.title}
+            </h3>
+            <p className="text-gray-600 mb-4">{selectedEvent.description}</p>
+            <div className="space-y-2 text-sm text-gray-500 mb-4">
+              <p>Start: {new Date(selectedEvent.startDate).toLocaleString()}</p>
+              <p>End: {new Date(selectedEvent.endDate).toLocaleString()}</p>
+              {selectedEvent.location && (
+                <p>Location: {selectedEvent.location}</p>
               )}
-
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 text-sm">
-                  <Clock className="size-4 text-gray-400" />
-                  <span>
-                    {new Date(selectedEvent.startDate).toLocaleString('es-ES')}{' '}
-                    -{new Date(selectedEvent.endDate).toLocaleString('es-ES')}
-                  </span>
-                </div>
-
-                {selectedEvent.location && (
-                  <div className="flex items-center space-x-2 text-sm">
-                    <MapPin className="size-4 text-gray-400" />
-                    <span>{selectedEvent.location}</span>
-                  </div>
-                )}
-
-                {selectedEvent.attendees &&
-                  selectedEvent.attendees.length > 0 && (
-                    <div className="flex items-center space-x-2 text-sm">
-                      <Users className="size-4 text-gray-400" />
-                      <span>{selectedEvent.attendees.join(', ')}</span>
-                    </div>
-                  )}
-
-                <div className="flex items-center space-x-4 text-sm">
-                  <span
-                    className={cn(
-                      'font-medium',
-                      priorityClasses[selectedEvent.priority || 'medium'],
-                    )}
-                  >
-                    Prioridad: {selectedEvent.priority}
-                  </span>
-                  <span className="capitalize">
-                    Estado: {selectedEvent.status}
-                  </span>
-                </div>
-              </div>
+              {selectedEvent.attendees && (
+                <p>Attendees: {selectedEvent.attendees.join(', ')}</p>
+              )}
             </div>
-
-            <div className="flex items-center space-x-2">
+            <div className="flex gap-2">
               <button
-                onClick={() =>
-                  handleUpdateEvent(selectedEvent.id, { status: 'confirmed' })
-                }
-                className="p-2 text-blue-600 hover:bg-blue-100 rounded transition-colors"
-                title="Editar evento"
+                type="button"
+                onClick={() => setSelectedEvent(null)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                <Edit className="size-4" />
+                Close
               </button>
               <button
-                onClick={() => handleDeleteEvent(selectedEvent.id)}
-                className="p-2 text-red-600 hover:bg-red-100 rounded transition-colors"
-                title="Eliminar evento"
+                type="button"
+                onClick={() => {
+                  handleEditEvent(selectedEvent);
+                  setSelectedEvent(null);
+                }}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                <Trash2 className="size-4" />
+                Edit
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Summary */}
-      <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
-        <span>Total de eventos: {output.total}</span>
-        <span>
-          Vista:{' '}
-          {viewType === 'month'
-            ? 'Mensual'
-            : viewType === 'week'
-              ? 'Semanal'
-              : 'Diaria'}
-        </span>
-      </div>
     </div>
   );
 };
 
-// Error state component
 export const CalendarError: React.FC<{
   error: string;
-  input?: { startDate?: string; endDate?: string };
-}> = ({ error, input }) => (
-  <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-    <div className="flex items-center space-x-3">
-      <div className="bg-red-100 rounded-lg size-12 flex items-center justify-center">
-        <Calendar className="size-6 text-red-600" />
+  input?: { date?: string; userId?: string };
+  onAction?: (action: { action: string; data?: any; context?: any }) => void;
+}> = ({ error, input, onAction }) => {
+  const handleRetry = () => {
+    onAction?.({
+      action: 'retry_load_events',
+      data: {
+        userId: input?.userId,
+        date: input?.date,
+      },
+    });
+  };
+
+  const handleRefresh = () => {
+    onAction?.({
+      action: 'refresh_calendar',
+      data: { userId: input?.userId },
+    });
+  };
+
+  return (
+    <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl">
+      <div className="flex items-center space-x-3 mb-4">
+        <div className="bg-red-100 rounded-lg p-2">
+          <CalendarIcon className="w-6 h-6 text-red-600" />
+        </div>
+        <div>
+          <h3 className="font-semibold text-red-800">Error Loading Calendar</h3>
+          <p className="text-red-600 text-sm">{error}</p>
+        </div>
       </div>
-      <div>
-        <h3 className="font-semibold text-red-800">
-          Error al cargar el calendario
-        </h3>
-        <p className="text-red-600 text-sm">{error}</p>
-        {input && (
-          <p className="text-red-500 text-xs mt-1">
-            Período:{' '}
-            {input.startDate
-              ? new Date(input.startDate).toLocaleDateString()
-              : 'actual'}{' '}
-            -
-            {input.endDate
-              ? new Date(input.endDate).toLocaleDateString()
-              : 'actual'}
-          </p>
-        )}
+
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={handleRetry}
+          className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Retry
+        </button>
+        <button
+          type="button"
+          onClick={handleRefresh}
+          className="flex-1 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+        >
+          Refresh
+        </button>
       </div>
     </div>
-  </div>
-);
+  );
+};

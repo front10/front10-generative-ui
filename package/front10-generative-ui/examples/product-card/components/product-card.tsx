@@ -1,6 +1,12 @@
 'use client';
 
-import { StarIcon, ClockIcon } from 'lucide-react';
+import {
+  StarIcon,
+  ClockIcon,
+  ShoppingCartIcon,
+  EyeIcon,
+  HeartIcon,
+} from 'lucide-react';
 import { cn } from '../../../src/utils';
 
 // Tipos para el componente
@@ -28,12 +34,14 @@ export interface ProductCardProps {
   input?: {
     productId: string;
   };
+  onAction?: (action: { action: string; data?: any; context?: any }) => void;
 }
 
 // Componente de carga
 export const ProductCardLoading: React.FC<{
   input?: { productId: string };
-}> = ({ input: _input }) => {
+  onAction?: (action: { action: string; data?: any; context?: any }) => void;
+}> = ({ input: _input, onAction: _onAction }) => {
   return (
     <div className="animate-pulse bg-white rounded-lg shadow-md p-6 max-w-sm">
       <div className="flex items-center space-x-4 mb-4">
@@ -60,8 +68,53 @@ export const ProductCardLoading: React.FC<{
 export const ProductCard: React.FC<ProductCardProps> = ({
   output,
   input: _input,
+  onAction,
 }) => {
   const { product } = output;
+
+  const handleAddToCart = () => {
+    onAction?.({
+      action: 'add_to_cart',
+      data: {
+        productId: product.id,
+        productName: product.name,
+        price: product.price,
+        currency: product.currency,
+      },
+      context: { timestamp: Date.now() },
+    });
+  };
+
+  const handleViewDetails = () => {
+    onAction?.({
+      action: 'view_details',
+      data: {
+        productId: product.id,
+        productName: product.name,
+      },
+    });
+  };
+
+  const handleAddToWishlist = () => {
+    onAction?.({
+      action: 'add_to_wishlist',
+      data: {
+        productId: product.id,
+        productName: product.name,
+      },
+    });
+  };
+
+  const handleShare = () => {
+    onAction?.({
+      action: 'share_product',
+      data: {
+        productId: product.id,
+        productName: product.name,
+        url: window.location.href,
+      },
+    });
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 max-w-sm border border-gray-200 hover:shadow-lg transition-shadow">
@@ -137,6 +190,53 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
       </div>
 
+      {/* Interactive Actions */}
+      <div className="mb-4 space-y-2">
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          disabled={!product.inStock}
+          className={cn(
+            'w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors',
+            product.inStock
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed',
+          )}
+        >
+          <ShoppingCartIcon className="w-4 h-4" />
+          {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+        </button>
+
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            type="button"
+            onClick={handleViewDetails}
+            className="flex items-center justify-center gap-1 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <EyeIcon className="w-4 h-4" />
+            Details
+          </button>
+
+          <button
+            type="button"
+            onClick={handleAddToWishlist}
+            className="flex items-center justify-center gap-1 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <HeartIcon className="w-4 h-4" />
+            Wishlist
+          </button>
+
+          <button
+            type="button"
+            onClick={handleShare}
+            className="flex items-center justify-center gap-1 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-sm">📤</span>
+            Share
+          </button>
+        </div>
+      </div>
+
       {/* Footer */}
       <div className="flex items-center justify-between text-xs text-gray-500 border-t pt-4">
         <span>Source: {output.source}</span>
@@ -150,10 +250,28 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 export const ProductCardError: React.FC<{
   error: string;
   input?: { productId: string };
-}> = ({ error, input }) => {
+  onAction?: (action: { action: string; data?: any; context?: any }) => void;
+}> = ({ error, input, onAction }) => {
+  const handleRetry = () => {
+    onAction?.({
+      action: 'retry_load',
+      data: { productId: input?.productId },
+    });
+  };
+
+  const handleReportError = () => {
+    onAction?.({
+      action: 'report_error',
+      data: {
+        productId: input?.productId,
+        error: error,
+      },
+    });
+  };
+
   return (
     <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-sm">
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-3 mb-4">
         <div className="bg-red-100 rounded-lg size-12 flex items-center justify-center">
           <span className="text-red-600 text-xl">⚠️</span>
         </div>
@@ -166,6 +284,24 @@ export const ProductCardError: React.FC<{
             </p>
           )}
         </div>
+      </div>
+
+      {/* Error Actions */}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={handleRetry}
+          className="flex-1 px-3 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Retry
+        </button>
+        <button
+          type="button"
+          onClick={handleReportError}
+          className="flex-1 px-3 py-2 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+        >
+          Report Error
+        </button>
       </div>
     </div>
   );

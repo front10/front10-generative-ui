@@ -5,6 +5,7 @@ export type {
   GenerativeUIRegistryType,
   GenerativeUIRendererProps,
   UseGenerativeUI,
+  UserAction,
 } from './types';
 
 // Exportar provider y hooks principales

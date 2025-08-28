@@ -2,61 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [1.0.0] - 2024-01-XX
+## [Unreleased]
 
 ### Added
 
-- Initial release of @front10/generative-ui
-- Core abstraction for Generative UI components
-- `GenerativeUIProvider` for context management
-- `useGenerativeUI` hook for component registration and rendering
-- `GenerativeUIRegistry` component for bulk registration
-- `useRegisterGenerativeComponent` hook for single component registration
-- `GenerativeUIRenderer` component for rendering based on tool state
-- `useRenderGenerativeUI` hook for message system integration
-- Complete TypeScript support with full type definitions
-- Support for all Vercel AI SDK 5.0 tool states
-- State persistence across re-renders using useRef
-- Comprehensive error handling and fallbacks
+- **Interactive Feedback System**: Components can now send user actions back to the LLM
+- **UserAction Interface**: Standardized structure for user interactions with `toolId`, `toolCallId`, `action`, `data`, and `context`
+- **Per-Component Action Handlers**: Each registered component can have its own `onUserAction` handler
+- **Multiple Actions Support**: Single components can trigger multiple different actions (e.g., "accept" and "cancel" buttons)
+- **Type-Safe Action System**: Complete TypeScript support for action handling
 
-### Examples
+### Changed
 
-- **Product Card Example**: Complete product information display with loading, success, and error states
-- **Image Gallery Example**: Interactive image search with hover effects and download actions
-- **Sentiment Analyzer Example**: Advanced text sentiment analysis with visual charts and suggestions
+- **Architecture Update**: Moved `onUserAction` from provider level to component registration level
+- **Component Registration**: `registerComponent` now accepts an optional `onUserAction` handler
+- **Provider Simplification**: `GenerativeUIProvider` no longer requires `onUserAction` prop
+- **Action Injection**: `onAction` prop is automatically injected into all component states (Loading, Success, Error)
 
-### Features
+### Technical Details
 
-- Automatic component rendering based on tool execution
-- Loading states with skeleton animations
-- Error states with detailed error information
-- Success states with rich data display
-- Hover effects and interactive elements
-- Responsive design with Tailwind CSS
-- Lucide React icon integration
-- Fully customizable component styling
-- Support for complex data structures
-- Real-time state updates during tool execution
+- Updated `GenerativeUIComponent` interface to include optional `onUserAction` handler
+- Modified `GenerativeUIProvider` to use component-specific action handlers
+- Enhanced `createActionHandler` to route actions to the correct component handler
+- Updated all examples to demonstrate per-component action handling
 
-### Technical
+### Examples Enhanced
 
-- Built with TypeScript for type safety
-- React 18+ compatibility
-- Vercel AI SDK 5.0 integration
-- Tree-shaking support for optimal bundle size
-- ESM and CommonJS module support
-- Source maps for debugging
-- Comprehensive documentation
-- Example implementations for all features
+- **Product Card**: Now supports add to cart, view details, add to wishlist, and share actions
+- **Calendar Events**: Enhanced with create, edit, delete, confirm, cancel, view details, and share actions
+- **Error Handling**: Components can now handle retry and error reporting actions
 
-### Documentation
+## [1.0.0] - 2024-01-15
 
-- Complete API reference
-- Quick start guide
-- Example implementations
-- Type definitions
-- Best practices guide
-- Integration examples
+### Added
+
+- Initial release of the Generative UI library
+- Core abstraction for AI tool UI components
+- Support for Vercel AI SDK 5.0
+- TypeScript definitions and examples
+- Product Card, Image Gallery, Sentiment Analyzer, and Calendar Events examples

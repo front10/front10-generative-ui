@@ -1,6 +1,6 @@
 # @front10/generative-ui
 
-A complete abstraction for creating generative UI components that automatically display when specific tools are executed in chat. Designed to work with **Vercel AI SDK 5.0** and provide a simple, scalable, and reusable way to create dynamic user experiences.
+A complete abstraction for creating generative UI components that automatically display when specific tools are executed in chat. Designed to work with **Vercel AI SDK 5.0** and provide a simple, scalable, and reusable way to create dynamic user experiences with interactive feedback capabilities.
 
 ## 🚀 Installation
 
@@ -23,7 +23,8 @@ import {
   GenerativeUIRegistry,
   useRegisterGenerativeComponent,
   GenerativeUIRenderer,
-  useRenderGenerativeUI
+  useRenderGenerativeUI,
+  UserAction
 } from '@front10/generative-ui';
 ```
 
@@ -57,23 +58,42 @@ export default function RootLayout({ children }) {
 }
 ```
 
-### 2. Register Components
+### 2. Register Components with Action Handlers
 
 ```tsx
 // components/chat.tsx
 import { useGenerativeUI } from '@front10/generative-ui';
+import { useGenerativeActions } from '@/hooks/use-generative-actions';
 import { productCardExample } from '@front10/generative-ui/examples';
 
 export function Chat() {
   const { registerComponent } = useGenerativeUI();
+  const { handleUserAction } = useGenerativeActions();
 
-  // Register the product card example
-  registerComponent({
-    toolId: productCardExample.toolId,
-    LoadingComponent: productCardExample.components.LoadingComponent,
-    SuccessComponent: productCardExample.components.SuccessComponent,
-    ErrorComponent: productCardExample.components.ErrorComponent
-  });
+  // Register components with individual action handlers
+  React.useLayoutEffect(() => {
+    registerComponent({
+      toolId: 'getProductInfo',
+      LoadingComponent: ProductCardLoading,
+      SuccessComponent: ProductCard,
+      ErrorComponent: ProductCardError,
+      onUserAction: action => {
+        console.log('Product Card action:', action);
+        handleUserAction(action);
+      }
+    });
+
+    registerComponent({
+      toolId: 'searchImages',
+      LoadingComponent: ImageGalleryLoading,
+      SuccessComponent: ImageGallery,
+      ErrorComponent: ImageGalleryError,
+      onUserAction: action => {
+        console.log('Image Gallery action:', action);
+        handleUserAction(action);
+      }
+    });
+  }, [registerComponent, handleUserAction]);
 
   return <div>Chat Component</div>;
 }
@@ -118,80 +138,63 @@ export function Message({ message }) {
 }
 ```
 
-## 🎨 Examples
+## 🎨 Interactive Examples
 
-### Product Card
+### Product Card with Multiple Actions
 
 ```tsx
-import { productCardExample } from '@front10/generative-ui/examples';
+import { useGenerativeActions } from '@/hooks/use-generative-actions';
 
-// Register
-registerComponent({
-  toolId: productCardExample.toolId,
-  ...productCardExample.components
-});
+export function Chat() {
+  const { handleUserAction } = useGenerativeActions();
 
-// Use in API
-import { getProductInfo } from '@front10/generative-ui/examples';
-
-export async function POST(request: Request) {
-  const result = streamText({
-    model: openai('gpt-4'),
-    messages,
-    tools: {
-      getProductInfo
+  registerComponent({
+    toolId: 'getProductInfo',
+    LoadingComponent: ProductCardLoading,
+    SuccessComponent: ProductCard,
+    ErrorComponent: ProductCardError,
+    onUserAction: action => {
+      console.log('Product action:', action);
+      handleUserAction(action);
     }
   });
+
+  // The component automatically receives onAction prop
+  // and can trigger multiple actions:
+  // - add_to_cart
+  // - view_details
+  // - add_to_wishlist
+  // - share_product
 }
 ```
 
-### Image Gallery
+### Calendar Events with Complex Interactions
 
 ```tsx
-import { imageGalleryExample } from '@front10/generative-ui/examples';
+import { useGenerativeActions } from '@/hooks/use-generative-actions';
 
-// Register
-registerComponent({
-  toolId: imageGalleryExample.toolId,
-  ...imageGalleryExample.components
-});
+export function Chat() {
+  const { handleUserAction } = useGenerativeActions();
 
-// Use in API
-import { searchImages } from '@front10/generative-ui/examples';
-
-export async function POST(request: Request) {
-  const result = streamText({
-    model: openai('gpt-4'),
-    messages,
-    tools: {
-      searchImages
+  registerComponent({
+    toolId: 'getEvents',
+    LoadingComponent: CalendarLoading,
+    SuccessComponent: CalendarComponent,
+    ErrorComponent: CalendarError,
+    onUserAction: action => {
+      console.log('Calendar action:', action);
+      handleUserAction(action);
     }
   });
-}
-```
 
-### Sentiment Analyzer
-
-```tsx
-import { sentimentAnalyzerExample } from '@front10/generative-ui/examples';
-
-// Register
-registerComponent({
-  toolId: sentimentAnalyzerExample.toolId,
-  ...sentimentAnalyzerExample.components
-});
-
-// Use in API
-import { analyzeSentimentTool } from '@front10/generative-ui/examples';
-
-export async function POST(request: Request) {
-  const result = streamText({
-    model: openai('gpt-4'),
-    messages,
-    tools: {
-      analyzeSentimentTool
-    }
-  });
+  // The calendar component supports multiple actions:
+  // - create_event
+  // - edit_event
+  // - delete_event
+  // - confirm_event
+  // - cancel_event
+  // - view_event_details
+  // - share_event
 }
 ```
 
@@ -201,10 +204,12 @@ export async function POST(request: Request) {
 
 #### `GenerativeUIProvider`
 
-The main provider that handles component registration and rendering.
+The main provider that handles component registration and rendering with interactive feedback.
 
 ```tsx
-<GenerativeUIProvider>{children}</GenerativeUIProvider>
+<GenerativeUIProvider onUserAction={handleUserAction}>
+  {children}
+</GenerativeUIProvider>
 ```
 
 #### `useGenerativeUI`
@@ -212,7 +217,7 @@ The main provider that handles component registration and rendering.
 Hook to access the Generative UI context.
 
 ```tsx
-const { registerComponent, renderComponent } = useGenerativeUI();
+const { registerComponent, renderComponent, onUserAction } = useGenerativeUI();
 ```
 
 #### `GenerativeUIRegistry`
@@ -261,14 +266,37 @@ const renderGenerativeUI = useRenderGenerativeUI();
 
 ### Types
 
+#### `UserAction`
+
+```tsx
+interface UserAction {
+  toolId: string; // Identificador del tool/componente
+  toolCallId?: string; // ID específico de la llamada al tool
+  action: string; // Identificador de la acción (ej: "accept", "cancel", "select")
+  data?: any; // Datos adicionales de la acción
+  context?: any; // Contexto adicional
+}
+```
+
 #### `GenerativeUIComponent<TInput, TOutput>`
 
 ```tsx
 interface GenerativeUIComponent<TInput = any, TOutput = any> {
   toolId: string;
-  LoadingComponent?: React.ComponentType<{ input?: TInput }>;
-  SuccessComponent: React.ComponentType<{ output: TOutput; input?: TInput }>;
-  ErrorComponent?: React.ComponentType<{ error: string; input?: TInput }>;
+  LoadingComponent?: React.ComponentType<{
+    input?: TInput;
+    onAction?: (action: Omit<UserAction, 'toolId'>) => void;
+  }>;
+  SuccessComponent: React.ComponentType<{
+    output: TOutput;
+    input?: TInput;
+    onAction?: (action: Omit<UserAction, 'toolId'>) => void;
+  }>;
+  ErrorComponent?: React.ComponentType<{
+    error: string;
+    input?: TInput;
+    onAction?: (action: Omit<UserAction, 'toolId'>) => void;
+  }>;
 }
 ```
 
@@ -295,6 +323,171 @@ interface GenerativeUIRendererProps {
 }
 ```
 
+## 🎯 Interactive Feedback Examples
+
+### Using the Built-in Hook
+
+Create a custom hook to handle user actions:
+
+```tsx
+// hooks/use-generative-actions.ts
+'use client';
+
+import { useChat } from '@ai-sdk/react';
+
+export interface UserAction {
+  toolId: string;
+  toolCallId?: string;
+  action: string;
+  data?: any;
+  context?: any;
+}
+
+export function useGenerativeActions() {
+  const { sendMessage } = useChat();
+
+  const handleUserAction = (action: UserAction) => {
+    // Create descriptive messages based on actions
+    let content = '';
+
+    switch (action.action) {
+      case 'add_to_cart':
+        content = `I want to add ${
+          action.data?.productName || 'this product'
+        } to my cart`;
+        break;
+      case 'view_details':
+        content = `Show me more details about ${
+          action.data?.productName || 'this product'
+        }`;
+        break;
+      default:
+        content = `I performed the action: ${action.action}`;
+    }
+
+    // Send to LLM using sendMessage (Vercel AI SDK v5)
+    sendMessage({
+      role: 'user',
+      parts: [
+        {
+          type: 'text',
+          text: content
+        }
+      ]
+    });
+  };
+
+  return { handleUserAction };
+}
+```
+
+### Creating Interactive Components
+
+```tsx
+// Example: Product Card with multiple actions
+export const ProductCard: React.FC<ProductCardProps> = ({
+  output,
+  onAction
+}) => {
+  const { product } = output;
+
+  const handleAddToCart = () => {
+    onAction?.({
+      action: 'add_to_cart',
+      data: {
+        productId: product.id,
+        productName: product.name,
+        price: product.price
+      },
+      context: { timestamp: Date.now() }
+    });
+  };
+
+  const handleViewDetails = () => {
+    onAction?.({
+      action: 'view_details',
+      data: { productId: product.id }
+    });
+  };
+
+  return (
+    <div className='product-card'>
+      <h3>{product.name}</h3>
+      <p>{product.price}</p>
+      <div className='actions'>
+        <button onClick={handleAddToCart}>Add to Cart</button>
+        <button onClick={handleViewDetails}>View Details</button>
+      </div>
+    </div>
+  );
+};
+```
+
+### Handling Actions in Your App (Vercel AI SDK v5)
+
+```tsx
+// In your main chat component
+const { sendMessage } = useChat();
+
+const handleUserAction = (action: UserAction) => {
+  // Create descriptive messages based on actions
+  let content = '';
+
+  switch (action.action) {
+    case 'add_to_cart':
+      content = `I want to add ${
+        action.data?.productName || 'this product'
+      } to my cart`;
+      break;
+    case 'view_details':
+      content = `Show me more details about ${
+        action.data?.productName || 'this product'
+      }`;
+      break;
+    default:
+      content = `I performed the action: ${action.action}`;
+  }
+
+  // Send to LLM using sendMessage (Vercel AI SDK v5)
+  sendMessage({
+    role: 'user',
+    parts: [
+      {
+        type: 'text',
+        text: content
+      }
+    ]
+  });
+};
+```
+
+### Handling Actions in Your App (Vercel AI SDK v4 and earlier)
+
+```tsx
+// For older versions of Vercel AI SDK
+const { append } = useChat();
+
+const handleUserAction = (action: UserAction) => {
+  let content = '';
+
+  switch (action.action) {
+    case 'add_to_cart':
+      content = `I want to add ${
+        action.data?.productName || 'this product'
+      } to my cart`;
+      break;
+    default:
+      content = `I performed the action: ${action.action}`;
+  }
+
+  // Send to LLM using append (Vercel AI SDK v4 and earlier)
+  append({
+    role: 'user',
+    content
+  });
+};
+```
+
 ## 🎯 Benefits
 
 1. **Separation of concerns**: UI separated from tool logic
@@ -305,18 +498,22 @@ interface GenerativeUIRendererProps {
 6. **Scalability**: Easy to add new tools and components
 7. **Type safety**: Complete TypeScript for better DX
 8. **Compatibility**: Works with any Vercel AI SDK implementation
+9. **Interactive feedback**: Components can send actions back to the LLM
+10. **Multiple actions**: Single components can trigger multiple different actions
+11. **Per-component handlers**: Each component can have its own action handler
 
 ## 🚀 Project Status
 
-✅ **Production ready** - The abstraction is fully functional, documented, and tested.
+✅ **Production ready** - The abstraction is fully functional, documented, and tested with interactive feedback capabilities.
 
 ## 📚 Examples
 
 See the `examples/` directory for complete working examples:
 
-- **Product Card**: Product information display
-- **Image Gallery**: Image search with interactive gallery
-- **Sentiment Analyzer**: Text sentiment analysis with visualizations
+- **Product Card**: Product information display with cart, wishlist, and sharing actions
+- **Image Gallery**: Image search with interactive gallery and selection actions
+- **Sentiment Analyzer**: Text sentiment analysis with visualizations and feedback actions
+- **Calendar Events**: Event management with create, edit, delete, and confirmation actions
 
 ## 🤝 Contributing
 

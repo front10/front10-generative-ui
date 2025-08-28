@@ -23,6 +23,7 @@ import { ChatSDKError } from '@/lib/errors';
 import type { Attachment, ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
 import { useGenerativeUI } from '@front10/generative-ui';
+import { useGenerativeActions } from '@/hooks/use-generative-actions';
 import {
   ProductCard,
   ProductCardLoading,
@@ -68,41 +69,6 @@ export function Chat({
   // Registrar componentes usando useEffect
   const { registerComponent } = useGenerativeUI();
 
-  // Registrar componentes inmediatamente usando useLayoutEffect para que se ejecute antes del renderizado
-  React.useLayoutEffect(() => {
-    // Registrar el componente de Product Card
-    registerComponent({
-      toolId: 'getProductInfo',
-      LoadingComponent: ProductCardLoading,
-      SuccessComponent: ProductCard,
-      ErrorComponent: ProductCardError,
-    });
-
-    // Registrar el componente de Image Gallery
-    registerComponent({
-      toolId: 'searchImages',
-      LoadingComponent: ImageGalleryLoading,
-      SuccessComponent: ImageGallery,
-      ErrorComponent: ImageGalleryError,
-    });
-
-    // Registrar el componente de Sentiment Analyzer
-    registerComponent({
-      toolId: 'analyzeSentimentTool',
-      LoadingComponent: SentimentAnalyzerLoading,
-      SuccessComponent: SentimentAnalyzer,
-      ErrorComponent: SentimentAnalyzerError,
-    });
-
-    // Registrar el componente de Calendar Events
-    registerComponent({
-      toolId: 'getEvents',
-      LoadingComponent: CalendarLoading,
-      SuccessComponent: CalendarComponent,
-      ErrorComponent: CalendarError,
-    });
-  }, [registerComponent]);
-
   const {
     messages,
     setMessages,
@@ -147,6 +113,58 @@ export function Chat({
       }
     },
   });
+  const { handleUserAction } = useGenerativeActions({ sendMessage });
+
+  // Registrar componentes inmediatamente usando useLayoutEffect para que se ejecute antes del renderizado
+  React.useLayoutEffect(() => {
+    // Registrar el componente de Product Card
+    registerComponent({
+      toolId: 'getProductInfo',
+      LoadingComponent: ProductCardLoading,
+      SuccessComponent: ProductCard,
+      ErrorComponent: ProductCardError,
+      onUserAction: (action) => {
+        console.log('Product Card action:', action);
+        handleUserAction(action);
+      },
+    });
+
+    // Registrar el componente de Image Gallery
+    registerComponent({
+      toolId: 'searchImages',
+      LoadingComponent: ImageGalleryLoading,
+      SuccessComponent: ImageGallery,
+      ErrorComponent: ImageGalleryError,
+      onUserAction: (action) => {
+        console.log('Image Gallery action:', action);
+        handleUserAction(action);
+      },
+    });
+
+    // Registrar el componente de Sentiment Analyzer
+    registerComponent({
+      toolId: 'analyzeSentimentTool',
+      LoadingComponent: SentimentAnalyzerLoading,
+      SuccessComponent: SentimentAnalyzer,
+      ErrorComponent: SentimentAnalyzerError,
+      onUserAction: (action) => {
+        console.log('Sentiment Analyzer action:', action);
+        handleUserAction(action);
+      },
+    });
+
+    // Registrar el componente de Calendar Events
+    registerComponent({
+      toolId: 'getEvents',
+      LoadingComponent: CalendarLoading,
+      SuccessComponent: CalendarComponent,
+      ErrorComponent: CalendarError,
+      onUserAction: (action) => {
+        console.log('Calendar Events action:', action);
+        handleUserAction(action);
+      },
+    });
+  }, [registerComponent, handleUserAction]);
 
   const searchParams = useSearchParams();
   const query = searchParams.get('query');
