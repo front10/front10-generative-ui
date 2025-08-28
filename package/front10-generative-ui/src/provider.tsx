@@ -12,6 +12,7 @@ import type {
   GenerativeUIRegistryType,
   GenerativeUIRendererProps,
   UseGenerativeUI,
+  UserAction,
 } from './types';
 
 // Contexto para el registro de componentes generativos
@@ -29,9 +30,9 @@ export const useGenerativeUI = (): UseGenerativeUI => {
 };
 
 // Provider principal
-export const GenerativeUIProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const GenerativeUIProvider: React.FC<{
+  children: React.ReactNode;
+}> = ({ children }) => {
   const [, setRegistry] = useState<GenerativeUIRegistryType>({});
   const registryRef = useRef<GenerativeUIRegistryType>({});
 
@@ -68,6 +69,18 @@ export const GenerativeUIProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const key = `${toolCallId}-${state}`;
 
+    // Función helper para pasar onAction a los componentes
+    const createActionHandler =
+      (componentToolId: string) => (action: Omit<UserAction, 'toolId'>) => {
+        const fullAction = {
+          toolId: componentToolId,
+          ...action,
+        };
+
+        // Usar el onUserAction del componente registrado si existe
+        component.onUserAction?.(fullAction);
+      };
+
     switch (state) {
       case 'input-streaming':
       case 'input-available':
@@ -75,6 +88,7 @@ export const GenerativeUIProvider: React.FC<{ children: React.ReactNode }> = ({
           return React.createElement(component.LoadingComponent, {
             key,
             input,
+            onAction: createActionHandler(toolId),
           });
         }
         return null;
@@ -87,6 +101,7 @@ export const GenerativeUIProvider: React.FC<{ children: React.ReactNode }> = ({
               key,
               error: String(output.error),
               input,
+              onAction: createActionHandler(toolId),
             });
           }
           // Fallback si no hay ErrorComponent
@@ -105,6 +120,7 @@ export const GenerativeUIProvider: React.FC<{ children: React.ReactNode }> = ({
           key,
           output,
           input,
+          onAction: createActionHandler(toolId),
         });
 
       case 'output-error':
@@ -113,6 +129,7 @@ export const GenerativeUIProvider: React.FC<{ children: React.ReactNode }> = ({
             key,
             error: error || 'Unknown error occurred',
             input,
+            onAction: createActionHandler(toolId),
           });
         }
         // Fallback si no hay ErrorComponent

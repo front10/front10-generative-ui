@@ -7,16 +7,38 @@ export type ToolState =
   | 'output-available'
   | 'output-error';
 
+// Nueva interfaz para acciones de usuario
+export interface UserAction {
+  toolId: string;
+  toolCallId?: string;
+  action: string;
+  data?: any;
+  context?: any;
+}
+
 // Configuración de un componente generativo
 export interface GenerativeUIComponent<TInput = any, TOutput = any> {
   // Identificador único del tool
   toolId: string;
   // Componente para mostrar cuando el tool está cargando
-  LoadingComponent?: React.ComponentType<{ input?: TInput }>;
+  LoadingComponent?: React.ComponentType<{
+    input?: TInput;
+    onAction?: (action: Omit<UserAction, 'toolId'>) => void;
+  }>;
   // Componente para mostrar cuando el tool tiene resultado
-  SuccessComponent: React.ComponentType<{ output: TOutput; input?: TInput }>;
+  SuccessComponent: React.ComponentType<{
+    output: TOutput;
+    input?: TInput;
+    onAction?: (action: Omit<UserAction, 'toolId'>) => void;
+  }>;
   // Componente para mostrar cuando hay error
-  ErrorComponent?: React.ComponentType<{ error: string; input?: TInput }>;
+  ErrorComponent?: React.ComponentType<{
+    error: string;
+    input?: TInput;
+    onAction?: (action: Omit<UserAction, 'toolId'>) => void;
+  }>;
+  // Handler opcional para acciones de usuario
+  onUserAction?: (action: UserAction) => void;
 }
 
 // Configuración del registro de componentes generativos

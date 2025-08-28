@@ -1,2 +1,138 @@
-import n,{createContext,useContext,useState,useRef,useMemo,useEffect}from'react';import {jsx,Fragment}from'react/jsx-runtime';import {clsx}from'clsx';var d=createContext(null),o=()=>{let e=useContext(d);if(!e)throw new Error("useGenerativeUI must be used within a GenerativeUIProvider");return e},E=({children:e})=>{let[,r]=useState({}),p=useRef({}),I=u=>{let a={...p.current,[u.toolId]:u};p.current=a,r(a);},G=u=>{let{toolId:a,state:m,input:c,output:i,error:v,toolCallId:l}=u,t=p.current[a];if(!t)return n.createElement("div",{key:l,className:"p-4 border border-gray-200 rounded-lg bg-gray-50"},`Component not registered for tool: ${a}`);let s=`${l}-${m}`;switch(m){case "input-streaming":case "input-available":return t.LoadingComponent?n.createElement(t.LoadingComponent,{key:s,input:c}):null;case "output-available":return i&&typeof i=="object"&&"error"in i?t.ErrorComponent?n.createElement(t.ErrorComponent,{key:s,error:String(i.error),input:c}):n.createElement("div",{key:s,className:"text-red-500 p-2 border rounded"},`Error: ${String(i.error)}`):n.createElement(t.SuccessComponent,{key:s,output:i,input:c});case "output-error":return t.ErrorComponent?n.createElement(t.ErrorComponent,{key:s,error:v||"Unknown error occurred",input:c}):n.createElement("div",{key:s,className:"text-red-500 p-2 border rounded"},`Error: ${v||"Unknown error occurred"}`);default:return console.warn(`Unknown state: ${m} for tool: ${a}`),null}},C=useMemo(()=>({registerComponent:I,renderComponent:G}),[]);return jsx(d.Provider,{value:C,children:e})};var P=({components:e})=>{let{registerComponent:r}=o();return useEffect(()=>{e.forEach(p=>{r(p);});},[e,r]),null},b=e=>{let{registerComponent:r}=o();useEffect(()=>{r(e);},[e,r]);};var w=e=>{let{renderComponent:r}=o();return jsx(Fragment,{children:r(e)})},$=()=>{let{renderComponent:e}=o();return e};function S(...e){return clsx(...e)}export{E as GenerativeUIProvider,P as GenerativeUIRegistry,w as GenerativeUIRenderer,S as cn,o as useGenerativeUI,b as useRegisterGenerativeComponent,$ as useRenderGenerativeUI};//# sourceMappingURL=index.mjs.map
+import o, {
+  createContext,
+  useContext,
+  useState,
+  useRef,
+  useMemo,
+  useEffect,
+} from 'react';
+import { jsx, Fragment } from 'react/jsx-runtime';
+import { clsx } from 'clsx';
+var U = createContext(null),
+  i = () => {
+    let e = useContext(U);
+    if (!e)
+      throw new Error(
+        'useGenerativeUI must be used within a GenerativeUIProvider',
+      );
+    return e;
+  },
+  b = ({ children: e }) => {
+    let [, t] = useState({}),
+      c = useRef({}),
+      G = (p) => {
+        let r = { ...c.current, [p.toolId]: p };
+        (c.current = r), t(r);
+      },
+      C = (p) => {
+        let {
+            toolId: r,
+            state: l,
+            input: u,
+            output: s,
+            error: v,
+            toolCallId: d,
+          } = p,
+          n = c.current[r];
+        if (!n)
+          return o.createElement(
+            'div',
+            {
+              key: d,
+              className: 'p-4 border border-gray-200 rounded-lg bg-gray-50',
+            },
+            `Component not registered for tool: ${r}`,
+          );
+        let a = `${d}-${l}`,
+          m = (f) => (R) => {
+            let g = { toolId: f, ...R };
+            n.onUserAction?.(g);
+          };
+        switch (l) {
+          case 'input-streaming':
+          case 'input-available':
+            return n.LoadingComponent
+              ? o.createElement(n.LoadingComponent, {
+                  key: a,
+                  input: u,
+                  onAction: m(r),
+                })
+              : null;
+          case 'output-available':
+            return s && typeof s == 'object' && 'error' in s
+              ? n.ErrorComponent
+                ? o.createElement(n.ErrorComponent, {
+                    key: a,
+                    error: String(s.error),
+                    input: u,
+                    onAction: m(r),
+                  })
+                : o.createElement(
+                    'div',
+                    { key: a, className: 'text-red-500 p-2 border rounded' },
+                    `Error: ${String(s.error)}`,
+                  )
+              : o.createElement(n.SuccessComponent, {
+                  key: a,
+                  output: s,
+                  input: u,
+                  onAction: m(r),
+                });
+          case 'output-error':
+            return n.ErrorComponent
+              ? o.createElement(n.ErrorComponent, {
+                  key: a,
+                  error: v || 'Unknown error occurred',
+                  input: u,
+                  onAction: m(r),
+                })
+              : o.createElement(
+                  'div',
+                  { key: a, className: 'text-red-500 p-2 border rounded' },
+                  `Error: ${v || 'Unknown error occurred'}`,
+                );
+          default:
+            return console.warn(`Unknown state: ${l} for tool: ${r}`), null;
+        }
+      },
+      y = useMemo(() => ({ registerComponent: G, renderComponent: C }), []);
+    return jsx(U.Provider, { value: y, children: e });
+  };
+var $ = ({ components: e }) => {
+    let { registerComponent: t } = i();
+    return (
+      useEffect(() => {
+        e.forEach((c) => {
+          t(c);
+        });
+      }, [e, t]),
+      null
+    );
+  },
+  h = (e) => {
+    let { registerComponent: t } = i();
+    useEffect(() => {
+      t(e);
+    }, [e, t]);
+  };
+var k = (e) => {
+    let { renderComponent: t } = i();
+    return jsx(Fragment, { children: t(e) });
+  },
+  N = () => {
+    let { renderComponent: e } = i();
+    return e;
+  };
+function L(...e) {
+  return clsx(...e);
+}
+export {
+  b as GenerativeUIProvider,
+  $ as GenerativeUIRegistry,
+  k as GenerativeUIRenderer,
+  L as cn,
+  i as useGenerativeUI,
+  h as useRegisterGenerativeComponent,
+  N as useRenderGenerativeUI,
+}; //# sourceMappingURL=index.mjs.map
 //# sourceMappingURL=index.mjs.map
