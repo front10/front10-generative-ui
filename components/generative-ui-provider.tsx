@@ -1,6 +1,6 @@
 'use client';
 
-import { GenerativeUIProvider } from '@front10/generative-ui';
+import { GenerativeUIProvider } from '@/package/front10-generative-ui/src';
 
 export function GenerativeUIProviderWrapper({
   children,

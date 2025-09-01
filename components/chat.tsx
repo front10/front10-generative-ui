@@ -22,7 +22,7 @@ import { useAutoResume } from '@/hooks/use-auto-resume';
 import { ChatSDKError } from '@/lib/errors';
 import type { Attachment, ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
-import { useGenerativeUI } from '@front10/generative-ui';
+import { useGenerativeUI } from '@/package/front10-generative-ui/src';
 import { useGenerativeActions } from '@/hooks/use-generative-actions';
 import {
   ProductCard,
@@ -37,7 +37,7 @@ import {
   CalendarComponent,
   CalendarLoading,
   CalendarError,
-} from '@front10/generative-ui/examples';
+} from '@/package/front10-generative-ui/examples/';
 
 export function Chat({
   id,
@@ -124,7 +124,6 @@ export function Chat({
       SuccessComponent: ProductCard,
       ErrorComponent: ProductCardError,
       onUserAction: (action) => {
-        console.log('Product Card action:', action);
         handleUserAction(action);
       },
     });
@@ -136,7 +135,6 @@ export function Chat({
       SuccessComponent: ImageGallery,
       ErrorComponent: ImageGalleryError,
       onUserAction: (action) => {
-        console.log('Image Gallery action:', action);
         handleUserAction(action);
       },
     });
@@ -148,7 +146,6 @@ export function Chat({
       SuccessComponent: SentimentAnalyzer,
       ErrorComponent: SentimentAnalyzerError,
       onUserAction: (action) => {
-        console.log('Sentiment Analyzer action:', action);
         handleUserAction(action);
       },
     });
@@ -160,7 +157,6 @@ export function Chat({
       SuccessComponent: CalendarComponent,
       ErrorComponent: CalendarError,
       onUserAction: (action) => {
-        console.log('Calendar Events action:', action);
         handleUserAction(action);
       },
     });

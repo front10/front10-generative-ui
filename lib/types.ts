@@ -12,7 +12,7 @@ import type {
   createEvent,
   updateEvent,
   deleteEvent,
-} from '@front10/generative-ui/examples';
+} from '@/package/front10-generative-ui/examples';
 
 import type { ArtifactKind } from '@/components/artifact';
 import type { Suggestion } from './db/schema';

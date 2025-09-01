@@ -19,7 +19,7 @@ import { MessageReasoning } from './message-reasoning';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
-import { useRenderGenerativeUI } from '@front10/generative-ui';
+import { useRenderGenerativeUI } from '@/package/front10-generative-ui/src';
 
 // Type narrowing is handled by TypeScript's control flow analysis
 // The AI SDK provides proper discriminated unions for tool calls
@@ -125,7 +125,7 @@ const PurePreviewMessage = ({
                   p.type === 'tool-getEvents' ||
                   ('output' in p && p.output),
               );
-
+              
               if (type === 'text') {
                 // Skip text content if there are generative UI components with output to avoid redundancy
                 if (hasGenerativeUIWithOutput && message.role === 'assistant') {

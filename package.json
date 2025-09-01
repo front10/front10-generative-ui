@@ -19,7 +19,6 @@
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test"
   },
   "dependencies": {
-    "@front10/generative-ui": "file:package/front10-generative-ui",
     "@ai-sdk/openai": "^2.0.10",
     "@ai-sdk/provider": "2.0.0-beta.1",
     "@ai-sdk/react": "2.0.0-beta.6",
@@ -89,7 +88,8 @@
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "usehooks-ts": "^3.1.0",
-    "zod": "^3.25.68"
+    "zod": "^3.25.68",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
