@@ -26,4 +26,5 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_AUTO_INSTALL_PEERS: true
+          NPM_CONFIG_GIT_CHECKS: false
           # NPM_CONFIG_PROVENANCE: true
