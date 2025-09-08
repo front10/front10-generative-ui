@@ -1,6 +1,6 @@
 {
   "name": "@front10/generative-ui",
-  "version": "0.0.1-0",
+  "version": "0.0.1",
   "description": "A complete abstraction for creating generative UI components that automatically display when specific tools are executed in chat",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
